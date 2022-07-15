@@ -159,37 +159,54 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 })
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const from = new Date(req.query.from).toDateString()
-  const to = new Date(req.query.to).toDateString()
+  const from = req.query.from
+  const to = req.query.to
   const limit = Number(req.query.limit)
-  // if (limit) {
-  //   Logs.findOne({_id: req.params._id}, {'_id': 1, 'count': 1, 'username': 1, log: {$slice:limit}}, (err, doc) => {
-  //     if (err) console.log(err)
-  //     res.json(doc)
-  //   })
-  // } // works with limit
-  console.log(from, to)
-  if (from && to) {
+
+  if (from && to && limit) {
     Logs.findOne({_id: req.params._id}, (err, doc) => {
       if (err) console.log(err)
       const newLogArr = [];
       doc.log.forEach(el => {
-        console.log(el.date, from, el.date >= from)
-        console.log(el.date, to, el.date <= to)
-        if (el.date >= from && el.date <= to) {
+        if (new Date(el.date) >= new Date(from) && new Date(el.date) <= new Date(to)) {
           newLogArr.push(el)
         }
       })
-      console.log(doc.log)
-      console.log(newLogArr)
+      const limitArr = newLogArr.slice(0, limit)
+      res.json({
+        _id: doc._id,
+        username: doc.username,
+        count: doc.count,
+        log: limitArr
+      })
+    })
+  } else if (from && to) {
+    Logs.findOne({_id: req.params._id}, (err, doc) => {
+      if (err) console.log(err)
+      const newLogArr = [];
+      doc.log.forEach(el => {
+        if (new Date(el.date) >= new Date(from) && new Date(el.date) <= new Date(to)) {
+          newLogArr.push(el)
+        }
+      })
+      res.json({
+        _id: doc._id,
+        username: doc.username,
+        count: doc.count,
+        log: newLogArr
+      })
+    })
+  } else if (limit) {
+    Logs.findOne({_id: req.params._id}, {'_id': 1, 'count': 1, 'username': 1, log: {$slice:limit}}, (err, doc) => {
+      if (err) console.log(err)
+      res.json(doc)
+    })
+  } else {
+    Logs.findOne({_id: req.params._id}, '_id username count log', (err, doc) => {
+      if (err) console.log(err)
       res.json(doc)
     })
   }
-  
-  // Logs.findOne({_id: req.params._id}, '_id username count log', (err, doc) => {
-  //   if (err) console.log(err)
-  //   res.json(doc)
-  // })
 })
 
 mongoose.connection.on('open', () => {
