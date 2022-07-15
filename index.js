@@ -88,10 +88,13 @@ const User = mongoose.model('User', userSchema)
 const Log = mongoose.model('Log', logSchema)
 const Logs = mongoose.model('Logs', logsSchema)
 
+// Middleware
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 app.use(cors())
 app.use(express.static('public'))
+
+// routes
 app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html')
 })
@@ -114,7 +117,7 @@ app.post('/api/users', async (req, res) => {
 
 app.post('/api/users/:_id/exercises', (req, res) => {
   User.findById({_id: req.params._id}, async (err, user) => {
-    if (err) console.og(err)
+    if (err) console.log(err)
     const newExercise = new Exercise({
       _id: nanoid(),
       description: req.body.description,
@@ -156,14 +159,37 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 })
 
 app.get('/api/users/:_id/logs', (req, res) => {
-  const from = req.query.from
-  const to = req.query.to
-  const limit = req.query.limit
+  const from = new Date(req.query.from).toDateString()
+  const to = new Date(req.query.to).toDateString()
+  const limit = Number(req.query.limit)
+  // if (limit) {
+  //   Logs.findOne({_id: req.params._id}, {'_id': 1, 'count': 1, 'username': 1, log: {$slice:limit}}, (err, doc) => {
+  //     if (err) console.log(err)
+  //     res.json(doc)
+  //   })
+  // } // works with limit
+  console.log(from, to)
+  if (from && to) {
+    Logs.findOne({_id: req.params._id}, (err, doc) => {
+      if (err) console.log(err)
+      const newLogArr = [];
+      doc.log.forEach(el => {
+        console.log(el.date, from, el.date >= from)
+        console.log(el.date, to, el.date <= to)
+        if (el.date >= from && el.date <= to) {
+          newLogArr.push(el)
+        }
+      })
+      console.log(doc.log)
+      console.log(newLogArr)
+      res.json(doc)
+    })
+  }
   
-  Logs.findOne({_id: req.params._id}, '_id username count log', (err, doc) => {
-    if (err) console.log(err)
-    res.json(doc)
-  })
+  // Logs.findOne({_id: req.params._id}, '_id username count log', (err, doc) => {
+  //   if (err) console.log(err)
+  //   res.json(doc)
+  // })
 })
 
 mongoose.connection.on('open', () => {
@@ -172,3 +198,4 @@ mongoose.connection.on('open', () => {
   })
 })
 
+ 
