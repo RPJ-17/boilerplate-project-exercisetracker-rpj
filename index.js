@@ -33,8 +33,7 @@ const exerciseSchema = new Schema({
   },
   date: {
     type: String,
-    required: true,
-    default: new Date().toDateString()
+    required: true
   }
 })
 
@@ -118,35 +117,53 @@ app.post('/api/users', async (req, res) => {
 app.post('/api/users/:_id/exercises', (req, res) => {
   User.findById({_id: req.params._id}, async (err, user) => {
     if (err) console.log(err)
+    let exerciseDate
+    if (req.body.date === '' || req.body.date === undefined) {
+      exerciseDate = new Date().toDateString()
+    } else {
+      exerciseDate = new Date(req.body.date).toDateString()
+    }
     const newExercise = new Exercise({
       _id: nanoid(),
       description: req.body.description,
       duration: req.body.duration,
-      date: new Date(req.body.date).toDateString(),
+      date: exerciseDate,
       username: user.username
     })
     Logs.findOne({username: user.username}, async (err, logDoc) => {
       if (err) console.log(err)
       if (!logDoc) {
         let count = 0
+        let exerciseDate 
         count++
         const newLog = new Logs({
           _id: user._id,
           username: user.username,
           count
         })
+        if (req.body.date === '' || req.body.date === undefined) {
+          exerciseDate = new Date().toDateString()
+        } else {
+          exerciseDate = new Date(req.body.date).toDateString()
+        }
         newLog.log.push({
           description: req.body.description,
           duration: req.body.duration,
-          date: new Date(req.body.date).toDateString()
+          date: exerciseDate
         })
         await newLog.save()
       } else {
+        let exerciseDate
         logDoc.count = logDoc.count + 1
+        if (req.body.date === '' || req.body.date === undefined) {
+          exerciseDate = new Date().toDateString()
+        } else {
+          exerciseDate = new Date(req.body.date).toDateString()
+        }
         logDoc.log.push({
           description: req.body.description,
           duration: req.body.duration,
-          date: new Date(req.body.date).toDateString()
+          date: exerciseDate
         })
         logDoc.save()
       }
